@@ -475,7 +475,7 @@ __global__ void gpu_collide_save(double *f0, double *f1, double *f2, double *h0,
 	double Ez = ez[gpu_scalar_index(x, y, z)];
 	double forcex = charge * Ex + exf;
 	double forcey = charge * Ey;
-	double forcez = charge * Ez + +rho0*temp*Ra*nu*D;
+	double forcez = charge * Ez + +rho0*(temp+1)*Ra*nu*D;
 
 	double ux = rhoinv*((ft1 + ft7 + ft9  + ft13 + ft15 + ft19 + ft21 + ft23 + ft26 
 						- (ft2 + ft8 + ft10 + ft14 + ft16 + ft20 + ft22 + ft24 + ft25)) / CFL + forcex*dt*0.5);
@@ -488,16 +488,19 @@ __global__ void gpu_collide_save(double *f0, double *f1, double *f2, double *h0,
 		double xx = x*dx;
 		double yy = y*dy;
 		double zz = (z-0.5)*dz;
+		// Rolling patterns
+		uz = (cos(2.0*M_PI*zz)-1)*cos(2*M_PI/LL*xx)*0.001;
+		ux = LL*sin(2.0*M_PI*zz)*sin(2*M_PI/LL*xx)*0.001;
 		// Square patterns
-		uz = (cos(2 * M_PI*zz) - 1)*cos(2 * M_PI / LL*xx)*cos(2 * M_PI / LL*yy);
-		ux = 0.5 * LL*sin(2 * M_PI*zz)*sin(2 * M_PI / LL*xx)*cos(2 * M_PI / LL*yy);
-		uy = 0.5 * LL*sin(2 * M_PI*zz)*sin(2 * M_PI / LL*yy)*cos(2 * M_PI / LL*xx);
+		//uz = (cos(2 * M_PI*zz) - 1)*cos(2 * M_PI / LL*xx)*cos(2 * M_PI / LL*yy);
+		//ux = 0.5 * LL*sin(2 * M_PI*zz)*sin(2 * M_PI / LL*xx)*cos(2 * M_PI / LL*yy);
+		//uy = 0.5 * LL*sin(2 * M_PI*zz)*sin(2 * M_PI / LL*yy)*cos(2 * M_PI / LL*xx);
 		// Hexagon patterns
 		/*	double L = 0.5; // ratio of wavelength to domain size
-		double a = 4 * M_PI / 3 / L;
-		uz = (cos(2 * M_PI*z) - 1) / 3 *(2 * cos(2 * M_PI / (sqrtf(3)*L)*x)*cos(2 * M_PI / (3 * L)*y) + cos(4 * M_PI / (3 * L)*y));
-		ux = 2 * M_PI*sin(2 * M_PI*z)*(4 * M_PI) / (3 * sqrtf(3)*L*a ^ 2)*sin(2 * M_PI / (sqrtf(3)*L)*x)*cos(2 * M_PI / (3 * L)*y);
-		uy = 2 * M_PI*sin(2 * M_PI*z)*(4 * M_PI) / (9 * L*a ^ 2)*(cos(2 * M_PI / (sqrtf(3)*L)*x) + 2 * cos(2 * M_PI / (3 * L)*y))*sin(2 * M_PI / (3 * L)*y);
+		//double a = 4 * M_PI / 3 / L;
+		//uz = (cos(2 * M_PI*z) - 1) / 3 *(2 * cos(2 * M_PI / (sqrtf(3)*L)*x)*cos(2 * M_PI / (3 * L)*y) + cos(4 * M_PI / (3 * L)*y));
+		//ux = 2 * M_PI*sin(2 * M_PI*z)*(4 * M_PI) / (3 * sqrtf(3)*L*a ^ 2)*sin(2 * M_PI / (sqrtf(3)*L)*x)*cos(2 * M_PI / (3 * L)*y);
+		//uy = 2 * M_PI*sin(2 * M_PI*z)*(4 * M_PI) / (9 * L*a ^ 2)*(cos(2 * M_PI / (sqrtf(3)*L)*x) + 2 * cos(2 * M_PI / (3 * L)*y))*sin(2 * M_PI / (3 * L)*y);
 		//charge = charge + uz;*/
 	}
 	else{
@@ -601,7 +604,7 @@ __global__ void gpu_collide_save(double *f0, double *f1, double *f2, double *h0,
 			double Ezm = ez[gpu_scalar_index(x, y, 1)];
 			double forcexm = chargem * Exm + exf;
 			double forceym = chargem * Eym;
-			double forcezm = chargem * Ezm + rho0*tempm*Ra*nu*D;
+			double forcezm = chargem * Ezm + rho0*(tempm+1)*Ra*nu*D;
 			ux = -rhoinvm*((ftm1 + ftm7 + ftm9 + ftm13 + ftm15 + ftm19 + ftm21 + ftm23 + ftm26
 				- (ftm2 + ftm8 + ftm10 + ftm14 + ftm16 + ftm20 + ftm22 + ftm24 + ftm25)) / CFL + forcexm*dt*0.5);
 			uy = -rhoinvm*((ftm3 + ftm7 + ftm11 + ftm14 + ftm17 + ftm19 + ftm21 + ftm24 + ftm25
@@ -1327,91 +1330,93 @@ __global__ void gpu_collide_save(double *f0, double *f1, double *f2, double *h0,
 	double tw0rm = omega_minus*dt; //   omega_minus*dt 
 	double tw0cp = omega_c_plus*dt;  //   omega_c_plus*dt 
 	double tw0cm = omega_c_minus*dt; //   omega_c_minus*dt 
+	double tw0Tp = omega_T_plus*dt;  //   omega_T_plus*dt 
+	double tw0Tm = omega_T_minus*dt; //   omega_T_minus*dt 
 
 	// TRT collision operations
 	
 	f0[gpu_field0_index(x, y, z)]    = ft0 - (tw0rp * (fp0 - fep0) + tw0rm * (fm0 - fem0)) + dt*source0;
 	h0[gpu_field0_index(x, y, z)]    = ht0 - (tw0cp * (hp0 - hep0) + tw0cm * (hm0 - hem0));
-	temp0[gpu_field0_index(x, y, z)] = tempt0 - (tw0cp * (tempp0 - tempep0) + tw0cm * (tempm0 - tempem0));
+	temp0[gpu_field0_index(x, y, z)] = tempt0 - (tw0Tp * (tempp0 - tempep0) + tw0Tm * (tempm0 - tempem0));
 	
 	f2[gpu_fieldn_index(x, y, z, 1)]    = ft1 - (tw0rp * (fp1 - fep1) + tw0rm * (fm1 - fem1)) + dt*source1;
 	h2[gpu_fieldn_index(x, y, z, 1)]    = ht1 - (tw0cp * (hp1 - hep1) + tw0cm * (hm1 - hem1));
-	temp2[gpu_fieldn_index(x, y, z, 1)] = tempt1 - (tw0cp * (tempp1 - tempep1) + tw0cm * (tempm1 - tempem1));
+	temp2[gpu_fieldn_index(x, y, z, 1)] = tempt1 - (tw0Tp * (tempp1 - tempep1) + tw0Tm * (tempm1 - tempem1));
 	f2[gpu_fieldn_index(x, y, z, 2)]    = ft2 - (tw0rp * (fp2 - fep2) + tw0rm * (fm2 - fem2)) + dt*source2;
 	h2[gpu_fieldn_index(x, y, z, 2)]    = ht2 - (tw0cp * (hp2 - hep2) + tw0cm * (hm2 - hem2));
-	temp2[gpu_fieldn_index(x, y, z, 2)] = tempt2 - (tw0cp * (tempp2 - tempep2) + tw0cm * (tempm2 - tempem2));
+	temp2[gpu_fieldn_index(x, y, z, 2)] = tempt2 - (tw0Tp * (tempp2 - tempep2) + tw0Tm * (tempm2 - tempem2));
 	f2[gpu_fieldn_index(x, y, z, 3)]    = ft3 - (tw0rp * (fp3 - fep3) + tw0rm * (fm3 - fem3)) + dt*source3;
 	h2[gpu_fieldn_index(x, y, z, 3)]    = ht3 - (tw0cp * (hp3 - hep3) + tw0cm * (hm3 - hem3));
-	temp2[gpu_fieldn_index(x, y, z, 3)] = tempt3 - (tw0cp * (tempp3 - tempep3) + tw0cm * (tempm3 - tempem3));
+	temp2[gpu_fieldn_index(x, y, z, 3)] = tempt3 - (tw0Tp * (tempp3 - tempep3) + tw0Tm * (tempm3 - tempem3));
 	f2[gpu_fieldn_index(x, y, z, 4)]    = ft4 - (tw0rp * (fp4 - fep4) + tw0rm * (fm4 - fem4)) + dt*source4;
 	h2[gpu_fieldn_index(x, y, z, 4)]    = ht4 - (tw0cp * (hp4 - hep4) + tw0cm * (hm4 - hem4));
-	temp2[gpu_fieldn_index(x, y, z, 4)] = tempt4 - (tw0cp * (tempp4 - tempep4) + tw0cm * (tempm4 - tempem4));
+	temp2[gpu_fieldn_index(x, y, z, 4)] = tempt4 - (tw0Tp * (tempp4 - tempep4) + tw0Tm * (tempm4 - tempem4));
 	f2[gpu_fieldn_index(x, y, z, 5)]    = ft5 - (tw0rp * (fp5 - fep5) + tw0rm * (fm5 - fem5)) + dt*source5;
 	h2[gpu_fieldn_index(x, y, z, 5)]    = ht5 - (tw0cp * (hp5 - hep5) + tw0cm * (hm5 - hem5));
-	temp2[gpu_fieldn_index(x, y, z, 5)] = tempt5 - (tw0cp * (tempp5 - tempep5) + tw0cm * (tempm5 - tempem5));
+	temp2[gpu_fieldn_index(x, y, z, 5)] = tempt5 - (tw0Tp * (tempp5 - tempep5) + tw0Tm * (tempm5 - tempem5));
 	f2[gpu_fieldn_index(x, y, z, 6)]    = ft6 - (tw0rp * (fp6 - fep6) + tw0rm * (fm6 - fem6)) + dt*source6;
 	h2[gpu_fieldn_index(x, y, z, 6)]    = ht6 - (tw0cp * (hp6 - hep6) + tw0cm * (hm6 - hem6));
-	temp2[gpu_fieldn_index(x, y, z, 6)] = tempt6 - (tw0cp * (tempp6 - tempep6) + tw0cm * (tempm6 - tempem6));
+	temp2[gpu_fieldn_index(x, y, z, 6)] = tempt6 - (tw0Tp * (tempp6 - tempep6) + tw0Tm * (tempm6 - tempem6));
 	f2[gpu_fieldn_index(x, y, z, 7)]    = ft7 - (tw0rp * (fp7 - fep7) + tw0rm * (fm7 - fem7)) + dt*source7;
 	h2[gpu_fieldn_index(x, y, z, 7)]    = ht7 - (tw0cp * (hp7 - hep7) + tw0cm * (hm7 - hem7));
-	temp2[gpu_fieldn_index(x, y, z, 7)] = tempt7 - (tw0cp * (tempp7 - tempep7) + tw0cm * (tempm7 - tempem7));
+	temp2[gpu_fieldn_index(x, y, z, 7)] = tempt7 - (tw0Tp * (tempp7 - tempep7) + tw0Tm * (tempm7 - tempem7));
 	f2[gpu_fieldn_index(x, y, z, 8)]    = ft8 - (tw0rp * (fp8 - fep8) + tw0rm * (fm8 - fem8)) + dt*source8;
 	h2[gpu_fieldn_index(x, y, z, 8)]    = ht8 - (tw0cp * (hp8 - hep8) + tw0cm * (hm8 - hem8));
-	temp2[gpu_fieldn_index(x, y, z, 8)] = tempt8 - (tw0cp * (tempp8 - tempep8) + tw0cm * (tempm8 - tempem8));
+	temp2[gpu_fieldn_index(x, y, z, 8)] = tempt8 - (tw0Tp * (tempp8 - tempep8) + tw0Tm * (tempm8 - tempem8));
 	f2[gpu_fieldn_index(x, y, z, 9)]    = ft9 - (tw0rp * (fp9 - fep9) + tw0rm * (fm9 - fem9)) + dt*source9;
 	h2[gpu_fieldn_index(x, y, z, 9)]    = ht9 - (tw0cp * (hp9 - hep9) + tw0cm * (hm9 - hem9));
-	temp2[gpu_fieldn_index(x, y, z, 9)] = tempt9 - (tw0cp * (tempp9 - tempep9) + tw0cm * (tempm9 - tempem9));
+	temp2[gpu_fieldn_index(x, y, z, 9)] = tempt9 - (tw0Tp * (tempp9 - tempep9) + tw0Tm * (tempm9 - tempem9));
 	f2[gpu_fieldn_index(x, y, z, 10)]   = ft10 - (tw0rp * (fp10 - fep10) + tw0rm * (fm10 - fem10)) + dt*source10;
 	h2[gpu_fieldn_index(x, y, z, 10)]   = ht10 - (tw0cp * (hp10 - hep10) + tw0cm * (hm10 - hem10));
-	temp2[gpu_fieldn_index(x, y, z, 10)] = tempt10 - (tw0cp * (tempp10 - tempep10) + tw0cm * (tempm10 - tempem10));
+	temp2[gpu_fieldn_index(x, y, z, 10)] = tempt10 - (tw0Tp * (tempp10 - tempep10) + tw0Tm * (tempm10 - tempem10));
 	f2[gpu_fieldn_index(x, y, z, 11)]    = ft11 - (tw0rp * (fp11 - fep11) + tw0rm * (fm11 - fem11)) + dt*source11;
 	h2[gpu_fieldn_index(x, y, z, 11)]    = ht11 - (tw0cp * (hp11 - hep11) + tw0cm * (hm11 - hem11));
-	temp2[gpu_fieldn_index(x, y, z, 11)] = tempt11 - (tw0cp * (tempp11 - tempep11) + tw0cm * (tempm11 - tempem11));
+	temp2[gpu_fieldn_index(x, y, z, 11)] = tempt11 - (tw0Tp * (tempp11 - tempep11) + tw0Tm * (tempm11 - tempem11));
 	f2[gpu_fieldn_index(x, y, z, 12)]    = ft12 - (tw0rp * (fp12 - fep12) + tw0rm * (fm12 - fem12)) + dt*source12;
 	h2[gpu_fieldn_index(x, y, z, 12)]    = ht12 - (tw0cp * (hp12 - hep12) + tw0cm * (hm12 - hem12));
-	temp2[gpu_fieldn_index(x, y, z, 12)] = tempt12 - (tw0cp * (tempp12 - tempep12) + tw0cm * (tempm12 - tempem12));
+	temp2[gpu_fieldn_index(x, y, z, 12)] = tempt12 - (tw0Tp * (tempp12 - tempep12) + tw0Tm * (tempm12 - tempem12));
 	f2[gpu_fieldn_index(x, y, z, 13)]    = ft13 - (tw0rp * (fp13 - fep13) + tw0rm * (fm13 - fem13)) + dt*source13;
 	h2[gpu_fieldn_index(x, y, z, 13)]    = ht13 - (tw0cp * (hp13 - hep13) + tw0cm * (hm13 - hem13));
-	temp2[gpu_fieldn_index(x, y, z, 13)] = tempt13 - (tw0cp * (tempp13 - tempep13) + tw0cm * (tempm13 - tempem13));
+	temp2[gpu_fieldn_index(x, y, z, 13)] = tempt13 - (tw0Tp * (tempp13 - tempep13) + tw0Tm * (tempm13 - tempem13));
 	f2[gpu_fieldn_index(x, y, z, 14)]    = ft14 - (tw0rp * (fp14 - fep14) + tw0rm * (fm14 - fem14)) + dt*source14;
 	h2[gpu_fieldn_index(x, y, z, 14)]    = ht14 - (tw0cp * (hp14 - hep14) + tw0cm * (hm14 - hem14));
-	temp2[gpu_fieldn_index(x, y, z, 14)] = tempt14 - (tw0cp * (tempp14 - tempep14) + tw0cm * (tempm14 - tempem14));
+	temp2[gpu_fieldn_index(x, y, z, 14)] = tempt14 - (tw0Tp * (tempp14 - tempep14) + tw0Tm * (tempm14 - tempem14));
 	f2[gpu_fieldn_index(x, y, z, 15)]    = ft15 - (tw0rp * (fp15 - fep15) + tw0rm * (fm15 - fem15)) + dt*source15;
 	h2[gpu_fieldn_index(x, y, z, 15)]    = ht15 - (tw0cp * (hp15 - hep15) + tw0cm * (hm15 - hem15));
-	temp2[gpu_fieldn_index(x, y, z, 15)] = tempt15 - (tw0cp * (tempp15 - tempep15) + tw0cm * (tempm15 - tempem15));
+	temp2[gpu_fieldn_index(x, y, z, 15)] = tempt15 - (tw0Tp * (tempp15 - tempep15) + tw0Tm * (tempm15 - tempem15));
 	f2[gpu_fieldn_index(x, y, z, 16)]    = ft16 - (tw0rp * (fp16 - fep16) + tw0rm * (fm16 - fem16)) + dt*source16;
 	h2[gpu_fieldn_index(x, y, z, 16)]    = ht16 - (tw0cp * (hp16 - hep16) + tw0cm * (hm16 - hem16));
-	temp2[gpu_fieldn_index(x, y, z, 16)] = tempt16 - (tw0cp * (tempp16 - tempep16) + tw0cm * (tempm16 - tempem16));
+	temp2[gpu_fieldn_index(x, y, z, 16)] = tempt16 - (tw0Tp * (tempp16 - tempep16) + tw0Tm * (tempm16 - tempem16));
 	f2[gpu_fieldn_index(x, y, z, 17)]    = ft17 - (tw0rp * (fp17 - fep17) + tw0rm * (fm17 - fem17)) + dt*source17;
 	h2[gpu_fieldn_index(x, y, z, 17)]    = ht17 - (tw0cp * (hp17 - hep17) + tw0cm * (hm17 - hem17));
-	temp2[gpu_fieldn_index(x, y, z, 17)] = tempt17 - (tw0cp * (tempp17 - tempep17) + tw0cm * (tempm17 - tempem17));
+	temp2[gpu_fieldn_index(x, y, z, 17)] = tempt17 - (tw0Tp * (tempp17 - tempep17) + tw0Tm * (tempm17 - tempem17));
 	f2[gpu_fieldn_index(x, y, z, 18)]    = ft18 - (tw0rp * (fp18 - fep18) + tw0rm * (fm18 - fem18)) + dt*source18;
 	h2[gpu_fieldn_index(x, y, z, 18)]    = ht18 - (tw0cp * (hp18 - hep18) + tw0cm * (hm18 - hem18));
-	temp2[gpu_fieldn_index(x, y, z, 18)] = tempt18 - (tw0cp * (tempp18 - tempep18) + tw0cm * (tempm18 - tempem18));
+	temp2[gpu_fieldn_index(x, y, z, 18)] = tempt18 - (tw0Tp * (tempp18 - tempep18) + tw0Tm * (tempm18 - tempem18));
 	f2[gpu_fieldn_index(x, y, z, 19)]    = ft19 - (tw0rp * (fp19 - fep19) + tw0rm * (fm19 - fem19)) + dt*source19;
 	h2[gpu_fieldn_index(x, y, z, 19)]    = ht19 - (tw0cp * (hp19 - hep19) + tw0cm * (hm19 - hem19));
-	temp2[gpu_fieldn_index(x, y, z, 19)] = tempt19 - (tw0cp * (tempp19 - tempep19) + tw0cm * (tempm19 - tempem19));
+	temp2[gpu_fieldn_index(x, y, z, 19)] = tempt19 - (tw0Tp * (tempp19 - tempep19) + tw0Tm * (tempm19 - tempem19));
 	f2[gpu_fieldn_index(x, y, z, 20)]    = ft20 - (tw0rp * (fp20 - fep20) + tw0rm * (fm20 - fem20)) + dt*source20;
 	h2[gpu_fieldn_index(x, y, z, 20)]    = ht20 - (tw0cp * (hp20 - hep20) + tw0cm * (hm20 - hem20));
-	temp2[gpu_fieldn_index(x, y, z, 20)] = tempt20 - (tw0cp * (tempp20 - tempep20) + tw0cm * (tempm20 - tempem20));
+	temp2[gpu_fieldn_index(x, y, z, 20)] = tempt20 - (tw0Tp * (tempp20 - tempep20) + tw0Tm * (tempm20 - tempem20));
 	f2[gpu_fieldn_index(x, y, z, 21)]    = ft21 - (tw0rp * (fp21 - fep21) + tw0rm * (fm21 - fem21)) + dt*source21;
 	h2[gpu_fieldn_index(x, y, z, 21)]    = ht21 - (tw0cp * (hp21 - hep21) + tw0cm * (hm21 - hem21));
-	temp2[gpu_fieldn_index(x, y, z, 21)] = tempt21 - (tw0cp * (tempp21 - tempep21) + tw0cm * (tempm21 - tempem21));
+	temp2[gpu_fieldn_index(x, y, z, 21)] = tempt21 - (tw0Tp * (tempp21 - tempep21) + tw0Tm * (tempm21 - tempem21));
 	f2[gpu_fieldn_index(x, y, z, 22)]    = ft22 - (tw0rp * (fp22 - fep22) + tw0rm * (fm22 - fem22)) + dt*source22;
 	h2[gpu_fieldn_index(x, y, z, 22)]    = ht22 - (tw0cp * (hp22 - hep22) + tw0cm * (hm22 - hem22));
-	temp2[gpu_fieldn_index(x, y, z, 22)] = tempt22 - (tw0cp * (tempp22 - tempep22) + tw0cm * (tempm22 - tempem22));
+	temp2[gpu_fieldn_index(x, y, z, 22)] = tempt22 - (tw0Tp * (tempp22 - tempep22) + tw0Tm * (tempm22 - tempem22));
 	f2[gpu_fieldn_index(x, y, z, 23)]    = ft23 - (tw0rp * (fp23 - fep23) + tw0rm * (fm23 - fem23)) + dt*source23;
 	h2[gpu_fieldn_index(x, y, z, 23)]    = ht23 - (tw0cp * (hp23 - hep23) + tw0cm * (hm23 - hem23));
-	temp2[gpu_fieldn_index(x, y, z, 23)] = tempt23 - (tw0cp * (tempp23 - tempep23) + tw0cm * (tempm23 - tempem23));
+	temp2[gpu_fieldn_index(x, y, z, 23)] = tempt23 - (tw0Tp * (tempp23 - tempep23) + tw0Tm * (tempm23 - tempem23));
 	f2[gpu_fieldn_index(x, y, z, 24)]    = ft24 - (tw0rp * (fp24 - fep24) + tw0rm * (fm24 - fem24)) + dt*source24;
 	h2[gpu_fieldn_index(x, y, z, 24)]    = ht24 - (tw0cp * (hp24 - hep24) + tw0cm * (hm24 - hem24));
-	temp2[gpu_fieldn_index(x, y, z, 24)] = tempt24 - (tw0cp * (tempp24 - tempep24) + tw0cm * (tempm24 - tempem24));
+	temp2[gpu_fieldn_index(x, y, z, 24)] = tempt24 - (tw0Tp * (tempp24 - tempep24) + tw0Tm * (tempm24 - tempem24));
 	f2[gpu_fieldn_index(x, y, z, 25)]    = ft25 - (tw0rp * (fp25 - fep25) + tw0rm * (fm25 - fem25)) + dt*source25;
 	h2[gpu_fieldn_index(x, y, z, 25)]    = ht25 - (tw0cp * (hp25 - hep25) + tw0cm * (hm25 - hem25));
-	temp2[gpu_fieldn_index(x, y, z, 25)] = tempt25 - (tw0cp * (tempp25 - tempep25) + tw0cm * (tempm25 - tempem25));
+	temp2[gpu_fieldn_index(x, y, z, 25)] = tempt25 - (tw0Tp * (tempp25 - tempep25) + tw0Tm * (tempm25 - tempem25));
 	f2[gpu_fieldn_index(x, y, z, 26)]    = ft26 - (tw0rp * (fp26 - fep26) + tw0rm * (fm26 - fem26)) + dt*source26;
 	h2[gpu_fieldn_index(x, y, z, 26)]    = ht26 - (tw0cp * (hp26 - hep26) + tw0cm * (hm26 - hem26));
-	temp2[gpu_fieldn_index(x, y, z, 26)] = tempt26 - (tw0cp * (tempp26 - tempep26) + tw0cm * (tempm26 - tempem26));
+	temp2[gpu_fieldn_index(x, y, z, 26)] = tempt26 - (tw0Tp * (tempp26 - tempep26) + tw0Tm * (tempm26 - tempem26));
 }
 
 __global__ void gpu_boundary(double *f0, double *f1, double *f2, double *h0, double *h1, double *h2, 
