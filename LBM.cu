@@ -1836,7 +1836,7 @@ __host__ void compute_parameters(double *T, double *M, double *C, double *Fe, do
 	double eps_host;
 	double voltage_host;
 	//double nu_host;
-	double Ly_host;
+	double Lz_host;
 	double diffu_host;
 	double charge0_host;
 	double rho0_host;
@@ -1846,7 +1846,7 @@ __host__ void compute_parameters(double *T, double *M, double *C, double *Fe, do
 	cudaMemcpyFromSymbol(&eps_host, eps, sizeof(double), 0, cudaMemcpyDeviceToHost);
 	cudaMemcpyFromSymbol(&voltage_host, voltage, sizeof(double), 0, cudaMemcpyDeviceToHost);
 	//cudaMemcpyFromSymbol(&nu_host, nu, sizeof(double), 0, cudaMemcpyDeviceToHost);
-	cudaMemcpyFromSymbol(&Ly_host, Ly, sizeof(double), 0, cudaMemcpyDeviceToHost);
+	cudaMemcpyFromSymbol(&Lz_host, Lz, sizeof(double), 0, cudaMemcpyDeviceToHost);
 	cudaMemcpyFromSymbol(&diffu_host, diffu, sizeof(double), 0, cudaMemcpyDeviceToHost);
 	cudaMemcpyFromSymbol(&charge0_host, charge0, sizeof(double), 0, cudaMemcpyDeviceToHost);
 	cudaMemcpyFromSymbol(&rho0_host, rho0, sizeof(double), 0, cudaMemcpyDeviceToHost);
@@ -1854,7 +1854,7 @@ __host__ void compute_parameters(double *T, double *M, double *C, double *Fe, do
 
 	*M = sqrt(eps_host / rho0_host) / K_host;
 	*T = eps_host*voltage_host / K_host / nu_host / rho0_host;
-	*C = charge0_host * Ly_host * Ly_host / (voltage_host * eps_host);
+	*C = charge0_host * Lz_host * Lz_host / (voltage_host * eps_host);
 	*Fe = K_host * voltage_host / diffu_host;
 	*Pr = nu_host / D_host;
 
