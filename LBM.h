@@ -15,7 +15,7 @@
 
 __device__ double test;
 
-__device__ int perturb = 1;
+__device__ int perturb = 0;
 
 int iteractionCount = 0;
 double *T = (double*)malloc(sizeof(double));
@@ -25,47 +25,47 @@ double *Fe = (double*)malloc(sizeof(double));
 double *Pr = (double*)malloc(sizeof(double));
 
 
-unsigned int flag;// = 1; // if flat == 1, read previous data, otherwise initialize
-const int nThreads = 10; // can divide NX
+unsigned int flag = 1; // if flat == 1, read previous data, otherwise initialize
+const int nThreads = 29; // can divide NX
 
 // define grids
-const unsigned int NX = 20; // number of grid points in x-direction, meaning 121 cells while wavelength is 122 with periodic boundaries
+const unsigned int NX = 116; // number of grid points in x-direction, meaning 121 cells while wavelength is 122 with periodic boundaries
 const unsigned int W =  NX;
-const unsigned int NY = 20; // number of grid points in y-direction, meaning NY-1 cells
-const unsigned int NZ = 21;
+const unsigned int NY = 8; // number of grid points in y-direction, meaning NY-1 cells
+const unsigned int NZ = 101;
 const unsigned int H =  NZ;
 const unsigned int NE = 2 * (NZ - 1);
 const unsigned int size = NX*NY*NE;
-__constant__ double LL = 1.0;
-__constant__ double Lx = 1.0;
-__constant__ double Ly = 1.0;
+__constant__ double LL = 1.16;
+__constant__ double Lx = 1.16;
+__constant__ double Ly = 0.08;
 __constant__ double Lz = 1.0;
-__constant__ double dx = 1.0 / 20.0; //need to change according to NX and LX
-__constant__ double dy = 1.0 / 20.0; //need to change according to NY and LY
-__constant__ double dz = 1.0 / 20.0; //need to change according to NZ and LZ
+__constant__ double dx = 1.0 / 100.0; //need to change according to NX and LX
+__constant__ double dy = 1.0 / 100.0; //need to change according to NY and LY
+__constant__ double dz = 1.0 / 100.0; //need to change according to NZ and LZ
 // define physics
 double uw_host = 0.0; // velocity of the wall
 double exf_host = 0.0; // external force for poisseuille flow
 __device__ double uw;
 __device__ double exf;
-__constant__ double CFL = 0.05; // CFL = dt/dx
-__constant__ double dt = 0.05*1.0 / 20.0; // dt = dx * CFL need to change according to dx, dy
-__constant__ double cs_square = 1.0 / 3.0 / (0.05*0.05); // 1/3/(CFL^2)
+__constant__ double CFL = 0.01; // CFL = dt/dx
+__constant__ double dt = 0.01*1.0 / 100.0; // dt = dx * CFL need to change according to dx, dy
+__constant__ double cs_square = 1.0 / 3.0 / (0.01*0.01); // 1/3/(CFL^2)
 __constant__ double rho0 = 1600.0;
 __constant__ double charge0 = 10.0;
 __constant__ double voltage = 1.0e4;
 __constant__ double eps = 1.0e-4;
 __constant__ double K = 2.5e-5;
-__constant__ double diffu = 6.25e-5;
-double nu_host = 0.1;
-__device__ double nu;
+__constant__ double diffu = 1.25e-4;
+double nu_host = 0.13155;
+__device__ double nu = 0.13155;
 
 // Thermal properties
 
-__device__ double D = 0.009; // Thermal diffusivity
-double Ra_host = 1800;
-__device__ double Ra = 1800; // Rayleigh number
-__device__ double TH = 1; // Temperature of the lower surface
+__device__ double D = 0.013155; // Thermal diffusivity
+double Ra_host = 200;
+__device__ double Ra = 200; // Rayleigh number
+__device__ double TH = -1; // Temperature of the lower surface
 
 
 // define scheme
@@ -87,10 +87,10 @@ __constant__ double VC = 1.0e-6;
 __constant__ double VT = 1.0 / 12.0;
 
 
-const unsigned int NSTEPS = 1000;
+const unsigned int NSTEPS = 1500000;
 const unsigned int NSAVE =  NSTEPS / 10;
 const unsigned int NMSG   =  NSAVE;
-const unsigned int printCurrent = 500;
+const unsigned int printCurrent = 5000;
 
 
 // physical time
