@@ -2133,11 +2133,11 @@ void record_umax(FILE *fend, double time, double *ux_gpu, double *uy_gpu, double
 		for (unsigned int x = 0; x < NX; ++x) {
 			ux[scalar_index(x, y, NZ - 1)] = 2.0*ux[scalar_index(x, y, NZ - 2)] - ux[scalar_index(x, y, NZ - 3)];
 			uy[scalar_index(x, y, NZ - 1)] = 2.0*uy[scalar_index(x, y, NZ - 2)] - uy[scalar_index(x, y, NZ - 3)];
-			uy[scalar_index(x, y, NZ - 1)] = 2.0*uy[scalar_index(x, y, NZ - 2)] - uy[scalar_index(x, y, NZ - 3)];
+			uz[scalar_index(x, y, NZ - 1)] = 2.0*uz[scalar_index(x, y, NZ - 2)] - uz[scalar_index(x, y, NZ - 3)];
 		}
 	}
 
-	for (unsigned int z = 0; z < NZ; ++z)
+	for (unsigned int z = 1; z < NZ-1; ++z)
 	{
 		for (unsigned int y = 0; y < NY; ++y)
 		{
