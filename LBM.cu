@@ -2143,9 +2143,9 @@ void record_umax(FILE *fend, double time, double *ux_gpu, double *uy_gpu, double
 		{
 			for (unsigned int x = 0; x < NX; ++x)
 			{
-				//umax = MAX(umax, sqrt(ux[scalar_index(x, y, z)] * ux[scalar_index(x, y, z)] + uy[scalar_index(x, y, z)] * uy[scalar_index(x, y, z)]
-				//	+ uz[scalar_index(x, y, z)] * uz[scalar_index(x, y, z)]));
-				umax = MAX(umax, uz[scalar_index(x, y, z)]);
+				umax = MAX(umax, sqrt(ux[scalar_index(x, y, z)] * ux[scalar_index(x, y, z)] + uy[scalar_index(x, y, z)] * uy[scalar_index(x, y, z)]
+					+ uz[scalar_index(x, y, z)] * uz[scalar_index(x, y, z)]));
+				//umax = MAX(umax, uz[scalar_index(x, y, z)]);
 			}
 		}
 	}
