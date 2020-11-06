@@ -475,7 +475,7 @@ __global__ void gpu_collide_save(double *f0, double *f1, double *f2, double *h0,
 	double Ez = ez[gpu_scalar_index(x, y, z)];
 	double forcex = charge * Ex + exf;
 	double forcey = charge * Ey;
-	double forcez = charge * Ez + +rho0*(temp)*Ra*nu*D;
+	double forcez = charge * Ez + rho0*(temp)*Ra*nu*D;
 
 	double ux = rhoinv*((ft1 + ft7 + ft9  + ft13 + ft15 + ft19 + ft21 + ft23 + ft26 
 						- (ft2 + ft8 + ft10 + ft14 + ft16 + ft20 + ft22 + ft24 + ft25)) / CFL + forcex*dt*0.5);
