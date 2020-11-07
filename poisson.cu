@@ -63,7 +63,7 @@ __global__ void gpu_bc(double *ez) {
 		return;
 	}
 	if (z == NZ - 1) {
-		ez[gpu_scalar_index(x, y, NZ - 1)] = ez[gpu_scalar_index(x, y, NY - 2)];
+		ez[gpu_scalar_index(x, y, NZ - 1)] = ez[gpu_scalar_index(x, y, NZ - 2)];
 		return;
 	}
 }
