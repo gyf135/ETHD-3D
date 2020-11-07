@@ -499,8 +499,8 @@ __global__ void gpu_collide_save(double *f0, double *f1, double *f2, double *h0,
 		/*	double L = 0.5; // ratio of wavelength to domain size
 		//double a = 4 * M_PI / 3 / L;
 		//uz = (cos(2 * M_PI*z) - 1) / 3 *(2 * cos(2 * M_PI / (sqrtf(3)*L)*x)*cos(2 * M_PI / (3 * L)*y) + cos(4 * M_PI / (3 * L)*y));
-		//ux = 2 * M_PI*sin(2 * M_PI*z)*(4 * M_PI) / (3 * sqrtf(3)*L*a ^ 2)*sin(2 * M_PI / (sqrtf(3)*L)*x)*cos(2 * M_PI / (3 * L)*y);
-		//uy = 2 * M_PI*sin(2 * M_PI*z)*(4 * M_PI) / (9 * L*a ^ 2)*(cos(2 * M_PI / (sqrtf(3)*L)*x) + 2 * cos(2 * M_PI / (3 * L)*y))*sin(2 * M_PI / (3 * L)*y);
+		//ux = 2 * M_PI*sin(2 * M_PI*z)*(4 * M_PI) / (3 * sqrtf(3)*L*a*a)*sin(2 * M_PI / (sqrtf(3)*L)*x)*cos(2 * M_PI / (3 * L)*y);
+		//uy = 2 * M_PI*sin(2 * M_PI*z)*(4 * M_PI) / (9 * L*a*a)*(cos(2 * M_PI / (sqrtf(3)*L)*x) + 2 * cos(2 * M_PI / (3 * L)*y))*sin(2 * M_PI / (3 * L)*y);
 		//charge = charge + uz;*/
 	}
 	else{
